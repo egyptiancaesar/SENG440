@@ -15,6 +15,55 @@ int main(int argc, char** argv){
     if (fp ==NULL){
         printf("Error opening .wav file %s", argv[1]);
     }
-    printf("Hello, World!");
+    
     return 0;
+}
+
+void readWaveFileHeaders(){
+    printf("\nReading Wave Headers:\t...\n");
+    
+    //read wave header
+    fread(wave.waveHeader.sGroup,           sizeof(wave.waveHeader.sGroupID), 1, fp);
+    fread(buffer,                           sizeof(buffer),1 ,fp);
+    wave.waveHeader.dwFileLength = buffer[0] | buffer[1] <<8 |buffer[2] <<16 | buffer[3] <<24;
+    fread(wave.waveHeader.sRiffType,        sizeof(wave.waveHeader.sRiffType), 1, fp);
+
+    //read wave format chunk
+    fread(wave.waveFormatChunk.sGroupID,    sizeof(wave.waveFormatChunk.sGroupID), 1, fp);
+    fread(buffer,                           sizeof(buffer),1 ,fp);
+    wave.waveFormatChunk.dwChunkSize = buffer[0] | buffer[1] <<8 | buffer[2] <<16 | buffer[3] <<24;
+    fread(buffer,                           sizeof(__uint16_t), 1, fp);
+    wave.waveFormatChunk.wFormatTag = buffer[0] | buffer[1] << ;
+
+    fread(buffer,                           sizeof(__uint16_t), 1, fp);
+    wave.waveFormatChunk.wChannels = buffer[0] | buffer[1] <<8;
+
+    fread(buffer,                           sizeof(buffer), 1, fp);
+    wave.waveFormatChunk.dwSamplesPerSec = buffer[0] | buffer[1] << 8 | buffer[2] << 16 | buffer[3] << 24;
+
+    fread(buffer,                            sizeof(buffer), 1, fp);
+    wave.waveFormatChunk.dwAvgBytesPerSec = buffer[0] | buffer[1] <<8 | buffer[2] <<16 | buffer[3] <<24;
+    
+    fread(buffer,                            sizeof(__uint16_t), 1, fp);
+    wave.waveFormatChunk.wBlockAlign = buffer[0] | buffer[1] <<8;
+    
+    fread(buffer,                             sizeof(__uint16_t), 1, fp);
+    wave.waveFormatChunk.dwBitsPerSample = buffer[0] | buffer[1] <<8;
+
+    //read wave data chunk
+    fread(budffer, sizeof(buffer), 1, fp);
+    int notData = strcmp(buffer, "data");
+    int fileEnd = wave.waveHeader.dwFileLength - 40;
+    if (notData){
+        fread(buffer, sizeof(buffer), 1, fp);
+        notData = strcmp(buffer, "data");
+        if (!notData){
+            break;
+        }
+        fseek(fp, -3, SEEK_CUR);
+    }
+    strcpy(wave.waveDataChunk.sGroupID, buffer);
+    fread(buffer,                               sizeof(buffer), 1, fp);
+    wave.waveDataChunk.dwChunkSize = buffer[0] | buffer[1] << 8 | buffer[2] << 16 | buffer[3] << 24;
+    printtf("Reading Wave Headers:\t\tCompleted!\n\n");
 }
