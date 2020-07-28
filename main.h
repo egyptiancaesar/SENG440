@@ -7,7 +7,7 @@
 struct WAVE_HEADER{
     unsigned char sGroupID; 
     __uint32_t dwFileLength; 
-    unisgned char sRiffType[4]; 
+    unsigned char sRiffType[4]; 
 };
 
 /*
@@ -40,13 +40,13 @@ struct WAVE_DATA_CHUNK {
     unsigned char sGroupID[4];  // "data"'
     __uint32_t dwChunkSize;     //chunk size caries
     short *sampleData;          // = dwSamplesPerSec * wChannels
-}
+};
 
 struct WAVE {
     struct WAVE_HEADER          waveHeader;
     struct WAVE_FORMAT_CHUNK    waveFormatChunk;
     struct WAVE_DATA_CHUNK      waveDataChunk;
-}
+};
 
 /*
  *FUNCTIONS:
@@ -54,5 +54,5 @@ struct WAVE {
 
 //read the original wave file
 void read_wave_file_headers();
-void read_wave_file_data_Samples();
+void read_wave_file_data_samples();
 void read_wave_file();
