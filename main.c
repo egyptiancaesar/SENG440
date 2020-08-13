@@ -80,6 +80,34 @@ void read_wave_file_headers() {
     printf("Reading Wave Headers:\t\tCOMPLETED\n\n");
 }
 
+void read_wave_file_data_samples(){
+    if (wave.waveFormatChunk.wFormatTag ==1){
+        printf("Reading PCM Data:\t\t STARTED\n");
+
+        numSamples = (wave.waveDataChunk.dwChunkSize * 8)/(wave.waveFormatChunk.dwBitsPerSample * wave.waveFormatChunk.wChannels);
+        printf("\tNumber of Samples:\t%lu\n", numSamples);
+
+        sizeOfEachSample = (wave.waveFormatChunk.dwBitsPerSample * wave.waveFormatChunk.wChannels)/8;
+        printf("\tSize of Each Sample:\t%lu\n",sizeOfEachSample);
+        wave.waveDataChunk.sampleData = calloc(numSamples, sizeOfEachSample);
+        if (wave.waveDataChunk.sampleData == NULL) {
+            printf("\tCould not allocate enough memory to read data samples\n");
+            return;
+        }
+
+        int i;
+        for (i = 0; i < numSamples; i++) {
+            fread(buffer, sizeOfEachSample, 1, fp);
+            wave.waveDataChunk.sampleData[i] = (buffer[0]) | (buffer[1] << 8);
+        }
+        printf("Reading PCM data:\t\tComplete\n");
+    }else {
+        print("\tOnly use PCM data format please!");
+        exit(1);
+    }
+}
+
 void read_wave_file(){
     read_wave_file_headers();
+    read_wave_file_data_samples();
 }
