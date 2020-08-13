@@ -6,6 +6,7 @@
 
 FILE *fp;
 struct WAVE wave;
+struct C_WAVE cwave;
 unsigned char buffer[4];
 
 unsigned long numSamples;
@@ -113,4 +114,76 @@ void read_wave_file_data_samples(){
 void read_wave_file(){
     read_wave_file_headers();
     read_wave_file_data_samples();
+}
+
+void compressSamples(){
+    short sample;
+    short sample_sign;
+    unsigned short sample_magnitude;
+    unsigned short sample_threshold;
+    __uint8_t sample_codeword;
+
+    printf("Start audio Compression...\n");
+    
+    cwave.cwaveDataChunk.sampleData = (short*)malloc(numSamples * sizeof(char));
+    
+    if (cwave.cwaveDataChunk.sampleData == NULL) {
+        printf("Memory allocation failed.\n");
+        return;
+    }
+
+    int i = 0;
+
+    while(i<numSamples){
+    
+        sample = wave.waveDataChunk.sampleData[i] >> 2; 
+        sample_sign = sign(sample);
+        sample_magnitude = magnitude(sample);
+        sample_threshold = sample_magnitude + 33;
+        sample_codeword = codeword(sample_sign, sample_magnitude);
+    
+        codeword = ~codeword;    
+        cwave.cwaveDataChunk.sampleData[i] = codeword;
+    }
+
+    printf("Audio compression successful\n");
+
+}
+
+short sign(short sample){
+    if(sample < 0)
+        return 0;
+    else
+        return 1;
+}
+
+unsigned short magnitude(short sample){
+    if(sample < 0){
+        sample = -sample;
+    }
+    return sample;
+}
+
+__uint8_t codeword(short sign, unsigned short magnitude){
+
+    int chord;
+    int step = magnitude;
+    __uint8_t codeword;
+
+    for(int shift = 12; shift >= 5; shift--){
+    
+        if(magnitude & (1 << shift)) {
+        
+            chord = shift - 5;
+            step = (magnitude >> (shift - 4)) & 0xF;
+            break;
+        }        
+    
+    }
+
+    int dec_codeword = (sign << 7) | (chord << 4) | step;
+    codeword = (__uint8_t) dec_codeword; 
+    
+    return codeword;
+
 }

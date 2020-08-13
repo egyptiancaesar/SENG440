@@ -42,10 +42,27 @@ struct WAVE_DATA_CHUNK {
     short           *sampleData;        // sampleData = dwSamplesPerSec * wChannels 
 };
 
+/*
+ *  @sGroupID:      Indicates next data chunk
+ *  @dwChunkSize:   Length of this array
+ *  @sampleData:    The Data stored in this array
+ */
+struct C_WAVE_DATA_CHUNK {
+    unsigned char   sGroupID[4];        // sGroupID = "data"
+    __uint32_t      dwChunkSize;        // dwChunkSize = /* varies */
+    __uint8_t       *sampleData;        // sampleData = dwSamplesPerSec * wChannels 
+};
+
 struct WAVE {
     struct WAVE_HEADER          waveHeader;
     struct WAVE_FORMAT_CHUNK    waveFormatChunk;
     struct WAVE_DATA_CHUNK      waveDataChunk;
+};
+
+struct C_WAVE {
+    struct WAVE_HEADER          waveHeader;
+    struct WAVE_FORMAT_CHUNK    waveFormatChunk;
+    struct C_WAVE_DATA_CHUNK    cwaveDataChunk;
 };
 
 /*
@@ -56,3 +73,9 @@ struct WAVE {
 void read_wave_file_headers();
 void read_wave_file_data_samples();
 void read_wave_file();
+
+//Compression and Decompression
+void compress_samples();
+short sign(short sample);
+unsigned short magnitude(short sample);
+__uint8_t codeword(short sign, unsigned short magnitude);
