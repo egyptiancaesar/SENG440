@@ -18,17 +18,17 @@ struct WAVE_HEADER{
  *  @dwSamplesPerSec:   The sampling rate (444100 for CDs, 48000 for DATs, etc.)
  *  @dwAvgBytesPerSec:   The number of multichannel audio frames/sec - used to estimate how much memory will be needed
  *  @wBlockAlign:       The number of bytes per multichannel audio fram
- *  @dwBitsPerSample:   Bit depth (bits/sample) for the audio (8,16, 0r 32)
+ *  @dwBitsPerSample:   Bit depth (bits/sample) for the audio (8,16, or 32)
  */
-struct WAVE_FORMAT_CHUNK{
-    unsigned char sGroupID[4];      //always "fmt " (dont forget space at end)
-    __uint32_t dwChunkSize;         //chunk size varies
-    __uint8_t wFormatTag;           // = 1
-    __uint16_t wChannels;           // = 1
-    __uint32_t dwSamplesPerSec;     //number of samples/sec varies
-    __uint32_t dwAvgBytesPerSec;    //= sample_rate * blockAlign
-    __uint16_t wBlockAlign;         // = wChannels * (dwBitsPerSample/8)
-    __uint16_t dwBitsPerSample;     // number of bits/sample varies
+struct WAVE_FORMAT_CHUNK {
+    unsigned char   sGroupID[4];        // sGroupID = "fmt " 
+    __uint32_t      dwChunkSize;       // dwChunkSize = /* varies */ 
+    __uint8_t       wFormatTag;        // wFormatTag = 1 
+    __uint16_t      wChannels;         // wChannels = 1 
+    __uint32_t      dwSamplesPerSec;   // dwSamplesPerSec = /* varies */ 
+    __uint32_t      dwAvgBytesPerSec;  // dwAvgBytesPerSec = sampleRate * blockAlign 
+    __uint16_t      wBlockAlign;       // wBlockAlign = wChannels * (dwBitsPerSample / 8) 
+    __uint16_t      dwBitsPerSample;   // dwBitsPerSample = /* varies */
 };
 
 /*
@@ -37,9 +37,9 @@ struct WAVE_FORMAT_CHUNK{
  *  @sampleData:    The Data stored in this array
  */
 struct WAVE_DATA_CHUNK {
-    unsigned char sGroupID[4];  // "data"'
-    __uint32_t dwChunkSize;     //chunk size caries
-    short *sampleData;          // = dwSamplesPerSec * wChannels
+    unsigned char   sGroupID[4];        // sGroupID = "data"
+    __uint32_t      dwChunkSize;        // dwChunkSize = /* varies */
+    short           *sampleData;        // sampleData = dwSamplesPerSec * wChannels 
 };
 
 struct WAVE {
