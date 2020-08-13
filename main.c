@@ -22,18 +22,17 @@ int main(int argc, char** argv){
     return 0;
 }
 
-void readWaveFileHeaders() {
-    printf("\nBegin Reading Wave Headers:\t...\n");
+void read_wave_file_headers() {
+    printf("\nReading Wave Headers:\t\t STARTED\n");
 
     // Read wave header
     fread(wave.waveHeader.sGroupID,                 sizeof(wave.waveHeader.sGroupID), 1, fp);
-    
+           
     fread(buffer,                                   sizeof(buffer), 1, fp);
     wave.waveHeader.dwFileLength = (buffer[0]) | (buffer[1] << 8) | (buffer[2] << 16) | (buffer[3] << 24);
     
     fread(wave.waveHeader.sRiffType,                sizeof(wave.waveHeader.sRiffType), 1, fp);
     
-
     // Read wave format chunk
     fread(wave.waveFormatChunk.sGroupID,            sizeof(wave.waveFormatChunk.sGroupID), 1, fp);
     
@@ -78,7 +77,7 @@ void readWaveFileHeaders() {
     fread(buffer,                                sizeof(buffer), 1, fp);
     wave.waveDataChunk.dwChunkSize = (buffer[0]) | (buffer[1] << 8) | (buffer[2] << 16) | (buffer[3] << 24);
 
-    printf("Reading Wave Headers:\t\tCOMPLETE\n\n");
+    printf("Reading Wave Headers:\t\tCOMPLETED\n\n");
 }
 
 void read_wave_file(){

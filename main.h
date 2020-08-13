@@ -5,7 +5,7 @@
  *  @sRiffType:    to specify Riff file type, always "WAVE"
  */
 struct WAVE_HEADER{
-    unsigned char sGroupID; 
+    unsigned char sGroupID[4]; 
     __uint32_t dwFileLength; 
     unsigned char sRiffType[4]; 
 };
