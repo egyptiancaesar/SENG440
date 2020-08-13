@@ -8,6 +8,9 @@ FILE *fp;
 struct WAVE wave;
 unsigned char buffer[4];
 
+unsigned long numSamples;
+unsigned int sizeOfEachSample;
+
 int main(int argc, char** argv){
     if (argc <2){
         perror("\nPlease input a .wav file\n");
@@ -85,10 +88,10 @@ void read_wave_file_data_samples(){
         printf("Reading PCM Data:\t\t STARTED\n");
 
         numSamples = (wave.waveDataChunk.dwChunkSize * 8)/(wave.waveFormatChunk.dwBitsPerSample * wave.waveFormatChunk.wChannels);
-        printf("\tNumber of Samples:\t%lu\n", numSamples);
+        printf("\tNumber of Samples:\t%  lu\n", numSamples);
 
         sizeOfEachSample = (wave.waveFormatChunk.dwBitsPerSample * wave.waveFormatChunk.wChannels)/8;
-        printf("\tSize of Each Sample:\t%lu\n",sizeOfEachSample);
+        printf("\tSize of Each Sample:\t%    lu\n",sizeOfEachSample);
         wave.waveDataChunk.sampleData = calloc(numSamples, sizeOfEachSample);
         if (wave.waveDataChunk.sampleData == NULL) {
             printf("\tCould not allocate enough memory to read data samples\n");
@@ -102,7 +105,7 @@ void read_wave_file_data_samples(){
         }
         printf("Reading PCM data:\t\tComplete\n");
     }else {
-        print("\tOnly use PCM data format please!");
+        printf("\tOnly use PCM data format please!");
         exit(1);
     }
 }
