@@ -73,10 +73,12 @@ struct C_WAVE {
 void read_wave_file_headers();
 void read_wave_file_data_samples();
 void read_wave_file();
-void displaySamples();
+void display_samples();
 
 //Compression and Decompression
 void compress_samples();
+void decompress_samples();
 short sign(short sample);
 unsigned short magnitude(short sample);
+unsigned short codewordToMagnitude(__uint8_t codeword);
 __uint8_t codeword(short sign, unsigned short magnitude);

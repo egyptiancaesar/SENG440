@@ -6,6 +6,7 @@
 
 FILE *fp;
 struct WAVE wave;
+struct WAVE dwave;
 struct C_WAVE cwave;
 unsigned char buffer[4];
 
@@ -23,7 +24,9 @@ int main(int argc, char** argv){
         printf("Error opening .wav file %s", argv[1]);
     }
     read_wave_file();
-    displaySamples(); 
+    display_samples();
+    compress_samples();
+    decompress_samples(); 
     return 0;
 }
 
@@ -95,6 +98,7 @@ void read_wave_file_data_samples(){
         sizeOfEachSample = (wave.waveFormatChunk.dwBitsPerSample * wave.waveFormatChunk.wChannels)/8;
         printf("\tSize of Each Sample:\t%    lu\n",sizeOfEachSample);
         wave.waveDataChunk.sampleData = calloc(numSamples, sizeOfEachSample);
+        dwave.waveDataChunk.sampleData = calloc(numSamples, sizeOfEachSample);
         if (wave.waveDataChunk.sampleData == NULL) {
             printf("\tCould not allocate enough memory to read data samples\n");
             return;
@@ -117,7 +121,7 @@ void read_wave_file(){
     read_wave_file_data_samples();
 }
 
-void displaySamples(){
+void display_samples(){
 
     printf("Wave Samples...\n\n");
 
@@ -131,14 +135,15 @@ void displaySamples(){
 
 }
 
-void compressSamples(){
+void compress_samples(){
     short sample;
     short sample_sign;
     unsigned short sample_magnitude;
     unsigned short sample_threshold;
     __uint8_t sample_codeword;
 
-    printf("Start audio Compression...\n");
+    printf("\n");
+    printf("Start audio Compression...\n\n");
     
     //Assign memory for compressed samples array
     cwave.cwaveDataChunk.sampleData = malloc(numSamples * sizeof(char));
@@ -172,8 +177,66 @@ void compressSamples(){
         i = i + 1;
     }
 
-    printf("Audio compression successful\n");
+    printf("Audio compression successful\n\n");
 
+}
+
+void decompress_samples(){
+    short sample;
+    short sample_sign;
+    unsigned short sample_magnitude;
+    unsigned short sample_threshold;
+    __uint8_t sample_codeword;
+
+    printf("\n");
+    printf("Start audio Decompression...\n\n");
+
+    int i = 0;
+
+    while(i<numSamples){
+    
+        //Retrieve codeword from sample array
+        sample_codeword = cwave.cwaveDataChunk.sampleData[i]; 
+        //Bit-wise inversion of codeword        
+        sample_codeword = ~sample_codeword;
+        //Obtain magnitude from codeword
+        sample_threshold = codewordToMagnitude(sample_codeword); 
+    
+        sample_magnitude = sample_threshold - 33;
+        sample_sign = (sample_codeword & 0x80) >> 7;
+
+        //Attach sign
+        if(sample_sign){
+            sample = sample_magnitude;
+        }else{
+            sample = -sample_magnitude;
+        }
+        
+        //Restore to 16 bit sample
+        dwave.waveDataChunk.sampleData[i] = sample << 2;
+
+        i = i + 1;
+    }
+    
+    printf("Audio decompression successful\n\n");
+
+}
+
+unsigned short codewordToMagnitude(__uint8_t codeword){
+    int chord = (codeword & 0x70) >> 4;
+    int step = codeword & 0x0F;
+    int magnitude;
+
+    for(int shift = 12; shift >= 5; shift--){
+    
+        if (chord == shift - 5){
+            
+            magnitude = (1 << (shift - 5)) | (step << (shift - 4)) | (1 << shift);
+        }
+    
+    } 
+
+    return (unsigned short) magnitude;
 }
 
 short sign(short sample){
@@ -218,5 +281,66 @@ __uint8_t codeword(short sign, unsigned short magnitude){
     codeword = (__uint8_t) dec_codeword; 
     
     return codeword;
+
+}
+
+void generate_decompressed_file(){
+
+    printf("Generating decompressed audio to output.wav");
+
+    FILE *f = fopen("output.wav", "w");
+    if (f == NULL) {
+        printf("File write failed!\n\n");
+        return;
+    }
+
+    // headers
+    fwrite(wave.waveHeader.sGroupID, sizeof(wave.waveHeader.sGroupID), 1, f);
+    
+    convertIntToLittleEndian(wave.waveHeader.dwFileLength); 
+    fwrite(buffer, sizeof(buffer), 1, f);
+
+    fwrite(wave.waveHeader.sRiffType, sizeof(wave.waveHeader.sRiffType), 1, f);
+
+    fwrite(wave.waveFormatChunk.sGroupID, sizeof(wave.waveFormatChunk.sGroupID), 1, f);
+
+    convertIntToLittleEndian(wave.waveFormatChunk.dwChunkSize); 
+    fwrite(buffer, sizeof(buffer), 1, f);
+
+    convertShortToLittleEndian(wave.waveFormatChunk.wFormatTag); 
+    fwrite(buffer, sizeof(__uint16_t), 1, f);
+
+    convertShortToLittleEndian(wave.waveFormatChunk.wChannels); 
+    fwrite(buffer, sizeof(__uint16_t), 1, f);
+    
+    convertIntToLittleEndian(wave.waveFormatChunk.dwSamplesPerSec); 
+    fwrite(buffer, sizeof(buffer), 1, f);
+
+    convertIntToLittleEndian(wave.waveFormatChunk.dwAvgBytesPerSec); 
+    fwrite(buffer, sizeof(buffer), 1, f);
+
+    convertShortToLittleEndian(wave.waveFormatChunk.wBlockAlign); 
+    fwrite(buffer, sizeof(__uint16_t), 1, f);
+
+    convertShortToLittleEndian(wave.waveFormatChunk.dwBitsPerSample); 
+    fwrite(buffer, sizeof(__uint16_t), 1, f);
+
+    fwrite(wave.waveDataChunk.sGroupID, sizeof(wave.waveDataChunk.sGroupID), 1, f);
+
+    convertIntToLittleEndian(wave.waveDataChunk.dwChunkSize); 
+    fwrite(buffer, sizeof(buffer), 1, f);
+
+    // data
+    for (int i = 0; i < numSamples; i++) {
+        convertShortToLittleEndian(wave.waveDataChunk.sampleData[i]);
+        // if (i > 18100 && i < 18105) {
+        //     printf("Data Buffer: %.2x %.2x %.2x %.2x\n", buffer[0], buffer[1], buffer[2], buffer[3]);
+        // }
+        fwrite(buffer, sizeOfEachSample, 1, f);
+    }
+
+    fclose(f);
+
+    printf("Output Generated -- output.wav\n\n");
 
 }
