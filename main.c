@@ -22,7 +22,8 @@ int main(int argc, char** argv){
     if (fp ==NULL){
         printf("Error opening .wav file %s", argv[1]);
     }
-    read_wave_file(); 
+    read_wave_file();
+    displaySamples(); 
     return 0;
 }
 
@@ -116,6 +117,20 @@ void read_wave_file(){
     read_wave_file_data_samples();
 }
 
+void displaySamples(){
+
+    printf("Wave Samples...\n\n");
+
+    int i = 0;
+
+    while(i < numSamples){
+        printf("Sample %d : %hhx\n", i, wave.waveDataChunk.sampleData[i]); 
+        i = i + 1;
+    }
+
+
+}
+
 void compressSamples(){
     short sample;
     short sample_sign;
@@ -125,7 +140,8 @@ void compressSamples(){
 
     printf("Start audio Compression...\n");
     
-    cwave.cwaveDataChunk.sampleData = (short*)malloc(numSamples * sizeof(char));
+    //Assign memory for compressed samples array
+    cwave.cwaveDataChunk.sampleData = malloc(numSamples * sizeof(char));
     
     if (cwave.cwaveDataChunk.sampleData == NULL) {
         printf("Memory allocation failed.\n");
@@ -136,14 +152,24 @@ void compressSamples(){
 
     while(i<numSamples){
     
+        //Convert sample from 16 bit 2's complement to 13 bit signed integer 
         sample = wave.waveDataChunk.sampleData[i] >> 2; 
+        //Extract sign of sample
         sample_sign = sign(sample);
+        //Calculate absolute value of sample
         sample_magnitude = magnitude(sample);
+
+        //Use 33 bias for magnitude to modify threshold
         sample_threshold = sample_magnitude + 33;
+        //Generate codeword
         sample_codeword = codeword(sample_sign, sample_magnitude);
     
-        codeword = ~codeword;    
-        cwave.cwaveDataChunk.sampleData[i] = codeword;
+        //Bit-wise inversion of codeword
+        sample_codeword = ~sample_codeword;
+        //Save codeword to sample array    
+        cwave.cwaveDataChunk.sampleData[i] = sample_codeword;
+
+        i = i + 1;
     }
 
     printf("Audio compression successful\n");
@@ -152,8 +178,10 @@ void compressSamples(){
 
 short sign(short sample){
     if(sample < 0)
+        //+ve sign sample
         return 0;
     else
+        //-ve sign sample
         return 1;
 }
 
@@ -161,6 +189,7 @@ unsigned short magnitude(short sample){
     if(sample < 0){
         sample = -sample;
     }
+    //Returned magnitude part of sample
     return sample;
 }
 
@@ -171,16 +200,20 @@ __uint8_t codeword(short sign, unsigned short magnitude){
     __uint8_t codeword;
 
     for(int shift = 12; shift >= 5; shift--){
-    
+        //compare 1 bit to 12th significant bit of magnitude to determine if first 1 bit occurs there
+        //then 11th down to 5th 
+        //i.e. magnitude & 1000000000000
         if(magnitude & (1 << shift)) {
-        
+            //if most significant bit of 1 occurs here, assign chor and step according to table
             chord = shift - 5;
+            //Extract four step bits from magnitude by masking
             step = (magnitude >> (shift - 4)) & 0xF;
             break;
         }        
     
     }
 
+    //Assemble sign, chord and step bits into codeword
     int dec_codeword = (sign << 7) | (chord << 4) | step;
     codeword = (__uint8_t) dec_codeword; 
     

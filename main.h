@@ -73,6 +73,7 @@ struct C_WAVE {
 void read_wave_file_headers();
 void read_wave_file_data_samples();
 void read_wave_file();
+void displaySamples();
 
 //Compression and Decompression
 void compress_samples();
