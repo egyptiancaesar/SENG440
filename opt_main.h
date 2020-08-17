@@ -1,3 +1,9 @@
+/*
+ * This is the optimized version of the main.h library.
+ * Most functions now have parameters passed into them
+ *  rather than depending on global variables
+ */
+
 /**
  *  @sGroupID:     type of file format: RIFF - generic container format
  *                , stores data in tagged chunks
@@ -66,18 +72,19 @@ struct C_WAVE {
 };
 
 /*
- *FUNCTIONS:
+ *  Functions:
  */
 
-//read the original wave file
-void read_wave_file_headers();
-void read_wave_file_data_samples();
-void read_wave_file();
+//read original wave file 
+void read_wave_file_headers(FILE *fp, struct WAVE *wave);
+__uint64_t read_wave_file_data_samples(FILE *fp, struct WAVE *wave);
+__uint64_t read_wave_file(FILE *fp, struct WAVE *wave);
 
-//Compression and Decompression
-void compress_samples();
+//Mu-Law compression and decompression functions
+__uint8_t *compress_samples();
 void decompress_samples();
 
+//helper functions
 //Helpers
 short sign(short sample);
 unsigned short magnitude(short sample);
@@ -86,6 +93,6 @@ __uint8_t codeword(short sign, unsigned short magnitude);
 void LE_format_32(__uint32_t data);
 void LE_format_16(__uint16_t data);
 
-//Output
+//Terminal Display and File Writing Functions:
 void display_samples();
 void generate_decompressed_file();
