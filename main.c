@@ -8,7 +8,6 @@
 */
 FILE *fp;
 struct WAVE wave;
-struct WAVE dwave;
 struct C_WAVE cwave;
 
 unsigned char data_array[4];
@@ -108,7 +107,7 @@ void read_wave_file_data_samples(){
         sizeOfEachSample = (wave.waveFormatChunk.dwBitsPerSample * wave.waveFormatChunk.wChannels)/8;
         printf("\tSize of Each Sample:\t%    lu\n",sizeOfEachSample);
         wave.waveDataChunk.sampleData = calloc(numSamples, sizeOfEachSample);
-        dwave.waveDataChunk.sampleData = calloc(numSamples, sizeOfEachSample);
+
         if (wave.waveDataChunk.sampleData == NULL) {
             printf("\tCould not allocate enough memory to read data samples\n");
             return;
@@ -223,7 +222,7 @@ void decompress_samples(){
         }
         
         //Restore to 16 bit sample
-        dwave.waveDataChunk.sampleData[i] = sample << 2;
+        wave.waveDataChunk.sampleData[i] = sample << 2;
 
         i = i + 1;
     }
@@ -237,7 +236,9 @@ unsigned short codewordToMagnitude(__uint8_t codeword){
     int step = codeword & 0x0F;
     int magnitude;
 
-    for(int shift = 12; shift >= 5; shift--){
+    int shift;
+
+    for(shift = 12; shift >= 5; shift--){
         //Use chord value to determine magnitude using decoding table
         if (chord == shift - 5){
             //Assemble magnitude from step surrounded by '1' bit
@@ -272,7 +273,9 @@ __uint8_t codeword(short sign, unsigned short magnitude){
     int step = magnitude;
     __uint8_t codeword;
 
-    for(int shift = 12; shift >= 5; shift--){
+    int shift;
+
+    for(shift = 12; shift >= 5; shift--){
         //compare 1 bit to 12th significant bit of magnitude to determine if first 1 bit occurs there
         //then 11th down to 5th 
         //i.e. magnitude & 1000000000000
@@ -342,7 +345,10 @@ void generate_decompressed_file(){
     fwrite(data_array, 				sizeof(data_array), 1, f);
 
     //Write converted chunks of data to output.wav in original byte arrangement
-    for (int i = 0; i < numSamples; i++) {
+    
+    int i;
+    
+    for (i = 0; i < numSamples; i++) {
         LE_format_16(wave.waveDataChunk.sampleData[i]);
         fwrite(data_array, sizeOfEachSample, 1, f);
     }
@@ -367,43 +373,47 @@ void generate_compressed_file(){
     //Write original header information into output.wav in original byte arrangement
     fwrite(wave.waveHeader.sGroupID, sizeof(wave.waveHeader.sGroupID), 1, f);
 
-    LEFormat_32(wave.waveHeader.dwFileLength);
+    LE_format_32(wave.waveHeader.dwFileLength);
     fwrite(data_array, sizeof(data_array), 1, f);
 
     fwrite(wave.waveHeader.sRiffType, sizeof(wave.waveHeader.sRiffType), 1, f);
 
     fwrite(wave.waveFormatChunk.sGroupID, sizeof(wave.waveFormatChunk.sGroupID), 1, f);
 
-    LEFormat_32(wave.waveFormatChunk.dwChunkSize);
+    LE_format_32(wave.waveFormatChunk.dwChunkSize);
     fwrite(data_array, sizeof(data_array), 1, f);
 
-    LEFormat_16(wave.waveFormatChunk.wFormatTag);
+    LE_format_16(wave.waveFormatChunk.wFormatTag);
     fwrite(data_array, sizeof(__uint16_t), 1, f);
 
-    LEFormat_16(wave.waveFormatChunk.wChannels);
+    LE_format_16(wave.waveFormatChunk.wChannels);
     fwrite(data_array, sizeof(__uint16_t), 1, f);
 
-    LEFormat_32(wave.waveFormatChunk.dwSamplesPerSec);
+    LE_format_32(wave.waveFormatChunk.dwSamplesPerSec);
     fwrite(data_array, sizeof(data_array), 1, f);
 
-    LEFormat_32(wave.waveFormatChunk.dwAvgBytesPerSec);
+    LE_format_32(wave.waveFormatChunk.dwAvgBytesPerSec);
     fwrite(data_array, sizeof(data_array), 1, f);
 
-    LEFormat_16(wave.waveFormatChunk.wBlockAlign);
+    LE_format_16(wave.waveFormatChunk.wBlockAlign);
     fwrite(data_array, sizeof(__uint16_t), 1, f);
 
-    LEFormat_16(wave.waveFormatChunk.dwBitsPerSample);
+    LE_format_16(wave.waveFormatChunk.dwBitsPerSample);
     fwrite(data_array, sizeof(__uint16_t), 1, f);
 
     fwrite(wave.waveDataChunk.sGroupID, sizeof(wave.waveDataChunk.sGroupID), 1, f);
 
-    LEFormat_32(wave.waveDataChunk.dwChunkSize);
+    LE_format_32(wave.waveDataChunk.dwChunkSize);
     fwrite(data_array, sizeof(data_array), 1, f);
 
     //Write converted chunks of data to output.wav in original byte arrangement
-    for (int i = 0; i < numSamples; i++) {
-        LEFormat_16(cwave.cwaveDataChunk.sampleData[i]);
-        fwrite(data_array, sizeOfEachSample, 1, f);
+    
+    int i;
+
+    for (i = 0; i < numSamples; i++) {
+        LE_format_16(cwave.cwaveDataChunk.sampleData[i]);
+        //data_array[0] = cwave.cwaveDataChunk.sampleData[i] & 0x000000FF;
+        fwrite(data_array, sizeof(__uint16_t), 1, f);
     }
 
     fclose(f);
@@ -426,4 +436,5 @@ void LE_format_16(__uint16_t data) {
     data_array[0] =  data & 0x000000FF;
     data_array[1] = (data & 0x0000FF00) >> 8;
 }
+
 
