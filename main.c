@@ -3,16 +3,21 @@
 #include <string.h>
 #include <time.h>
 #include "main.h"
-
+/*
+* Global Variables
+*/
 FILE *fp;
 struct WAVE wave;
 struct WAVE dwave;
 struct C_WAVE cwave;
-unsigned char data_array[4];
 
+unsigned char data_array[4];
 unsigned long numSamples;
 unsigned int sizeOfEachSample;
 
+/*
+* main function:
+*/
 int main(int argc, char** argv){
     if (argc <2){
         perror("\nPlease input a .wav file\n");
@@ -39,35 +44,35 @@ void read_wave_file_headers() {
     printf("\nReading Wave Headers:\t\t STARTED\n");
 
     // Read wave header
-    fread(wave.waveHeader.sGroupID,                 sizeof(wave.waveHeader.sGroupID), 1, fp);
+    fread(wave.waveHeader.sGroupID,                 	sizeof(wave.waveHeader.sGroupID), 1, fp);
            
-    fread(data_array,                                   sizeof(data_array), 1, fp);
+    fread(data_array,                                 sizeof(data_array), 1, fp);
     wave.waveHeader.dwFileLength = (data_array[0]) | (data_array[1] << 8) | (data_array[2] << 16) | (data_array[3] << 24);
     
-    fread(wave.waveHeader.sRiffType,                sizeof(wave.waveHeader.sRiffType), 1, fp);
+    fread(wave.waveHeader.sRiffType,                	sizeof(wave.waveHeader.sRiffType), 1, fp);
     
     // Read wave format chunk
-    fread(wave.waveFormatChunk.sGroupID,            sizeof(wave.waveFormatChunk.sGroupID), 1, fp);
+    fread(wave.waveFormatChunk.sGroupID,            	sizeof(wave.waveFormatChunk.sGroupID), 1, fp);
     
-    fread(data_array,                                   sizeof(data_array), 1, fp);
+    fread(data_array,                                 sizeof(data_array), 1, fp);
     wave.waveFormatChunk.dwChunkSize = (data_array[0]) | (data_array[1] << 8) | (data_array[2] << 16) | (data_array[3] << 24);
     
-    fread(data_array,                                   sizeof(__uint16_t), 1, fp);
+    fread(data_array,                                 sizeof(__uint16_t), 1, fp);
     wave.waveFormatChunk.wFormatTag = data_array[0] | data_array[1] << 8;
 
-    fread(data_array,                                   sizeof(__uint16_t), 1, fp);
+    fread(data_array,                                 sizeof(__uint16_t), 1, fp);
     wave.waveFormatChunk.wChannels = (data_array[0]) | (data_array[1] << 8);
 
-    fread(data_array,                                   sizeof(data_array), 1, fp);
+    fread(data_array,                                 sizeof(data_array), 1, fp);
     wave.waveFormatChunk.dwSamplesPerSec = (data_array[0]) | (data_array[1] << 8) | (data_array[2] << 16) | (data_array[3] << 24);
 
-    fread(data_array,                                   sizeof(data_array), 1, fp);
+    fread(data_array,                                 sizeof(data_array), 1, fp);
     wave.waveFormatChunk.dwAvgBytesPerSec = (data_array[0]) | (data_array[1] << 8) | (data_array[2] << 16) | (data_array[3] << 24);
     
-    fread(data_array,                                   sizeof(__uint16_t), 1, fp);
+    fread(data_array,                                 sizeof(__uint16_t), 1, fp);
     wave.waveFormatChunk.wBlockAlign = (data_array[0]) | (data_array[1] << 8);
     
-    fread(data_array,                                   sizeof(__uint16_t), 1, fp);
+    fread(data_array,                                 sizeof(__uint16_t), 1, fp);
     wave.waveFormatChunk.dwBitsPerSample = (data_array[0]) | (data_array[1] << 8);
 
 
@@ -87,7 +92,7 @@ void read_wave_file_headers() {
     }
     strcpy(wave.waveDataChunk.sGroupID, data_array);
 
-    fread(data_array,                                sizeof(data_array), 1, fp);
+    fread(data_array,                              	sizeof(data_array), 1, fp);
     wave.waveDataChunk.dwChunkSize = (data_array[0]) | (data_array[1] << 8) | (data_array[2] << 16) | (data_array[3] << 24);
 
     printf("Reading Wave Headers:\t\tCOMPLETED\n\n");
@@ -300,44 +305,45 @@ void generate_decompressed_file(){
     }
 
     //Write original header information into output.wav in original byte arrangement
-    fwrite(wave.waveHeader.sGroupID, sizeof(wave.waveHeader.sGroupID), 1, f);
+    fwrite(wave.waveHeader.sGroupID, 			sizeof(wave.waveHeader.sGroupID), 1, f);
     
-    LEFormat_32(wave.waveHeader.dwFileLength); 
-    fwrite(data_array, sizeof(data_array), 1, f);
-
-    fwrite(wave.waveHeader.sRiffType, sizeof(wave.waveHeader.sRiffType), 1, f);
-
-    fwrite(wave.waveFormatChunk.sGroupID, sizeof(wave.waveFormatChunk.sGroupID), 1, f);
-
-    LEFormat_32(wave.waveFormatChunk.dwChunkSize); 
-    fwrite(data_array, sizeof(data_array), 1, f);
-
-    LEFormat_16(wave.waveFormatChunk.wFormatTag); 
-    fwrite(data_array, sizeof(__uint16_t), 1, f);
-
-    LEFormat_16(wave.waveFormatChunk.wChannels); 
-    fwrite(data_array, sizeof(__uint16_t), 1, f);
+    LE_format_32(wave.waveHeader.dwFileLength); 
     
-    LEFormat_32(wave.waveFormatChunk.dwSamplesPerSec); 
-    fwrite(data_array, sizeof(data_array), 1, f);
+    fwrite(data_array, 				sizeof(data_array), 1, f);
 
-    LEFormat_32(wave.waveFormatChunk.dwAvgBytesPerSec); 
-    fwrite(data_array, sizeof(data_array), 1, f);
+    fwrite(wave.waveHeader.sRiffType, 		sizeof(wave.waveHeader.sRiffType), 1, f);
 
-    LEFormat_16(wave.waveFormatChunk.wBlockAlign); 
-    fwrite(data_array, sizeof(__uint16_t), 1, f);
+    fwrite(wave.waveFormatChunk.sGroupID, 		sizeof(wave.waveFormatChunk.sGroupID), 1, f);
 
-    LEFormat_16(wave.waveFormatChunk.dwBitsPerSample); 
-    fwrite(data_array, sizeof(__uint16_t), 1, f);
+    LE_format_32(wave.waveFormatChunk.dwChunkSize); 
+    fwrite(data_array, 				sizeof(data_array), 1, f);
 
-    fwrite(wave.waveDataChunk.sGroupID, sizeof(wave.waveDataChunk.sGroupID), 1, f);
+    LE_format_16(wave.waveFormatChunk.wFormatTag); 
+    fwrite(data_array, 				sizeof(__uint16_t), 1, f);
 
-    LEFormat_32(wave.waveDataChunk.dwChunkSize); 
-    fwrite(data_array, sizeof(data_array), 1, f);
+    LE_format_16(wave.waveFormatChunk.wChannels); 
+    fwrite(data_array, 				sizeof(__uint16_t), 1, f);
+    
+    LE_format_32(wave.waveFormatChunk.dwSamplesPerSec); 
+    fwrite(data_array, 				sizeof(data_array), 1, f);
+
+    LE_format_32(wave.waveFormatChunk.dwAvgBytesPerSec); 
+    fwrite(data_array, 				sizeof(data_array), 1, f);
+
+    LE_format_16(wave.waveFormatChunk.wBlockAlign); 
+    fwrite(data_array, 				sizeof(__uint16_t), 1, f);
+
+    LE_format_16(wave.waveFormatChunk.dwBitsPerSample); 
+    fwrite(data_array, 				sizeof(__uint16_t), 1, f);
+
+    fwrite(wave.waveDataChunk.sGroupID, 		sizeof(wave.waveDataChunk.sGroupID), 1, f);
+
+    LE_format_32(wave.waveDataChunk.dwChunkSize); 
+    fwrite(data_array, 				sizeof(data_array), 1, f);
 
     //Write converted chunks of data to output.wav in original byte arrangement
     for (int i = 0; i < numSamples; i++) {
-        LEFormat_16(wave.waveDataChunk.sampleData[i]);
+        LE_format_16(wave.waveDataChunk.sampleData[i]);
         fwrite(data_array, sizeOfEachSample, 1, f);
     }
 
@@ -407,7 +413,7 @@ void generate_compressed_file(){
 }
 
 // converts 32 bit data to little endian form
-void LEFormat_32(__uint32_t data) {
+void LE_format_32(__uint32_t data) {
     data_array[0] =  data & 0x000000FF;
     data_array[1] = (data & 0x0000FF00) >> 8;
     data_array[2] = (data & 0x00FF0000) >> 16;
@@ -416,7 +422,7 @@ void LEFormat_32(__uint32_t data) {
 
 
 // converts 16 bit data to little endian form
-void LEFormat_16(__uint16_t data) {
+void LE_format_16(__uint16_t data) {
     data_array[0] =  data & 0x000000FF;
     data_array[1] = (data & 0x0000FF00) >> 8;
 }
