@@ -88,4 +88,5 @@ void LEFormat_16(__uint16_t data);
 
 //Output
 void display_samples();
+void generate_compressed_file();
 void generate_decompressed_file();

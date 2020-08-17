@@ -29,6 +29,7 @@ int main(int argc, char** argv){
     //display_samples();
     compress_samples();
     decompress_samples(); 
+    generate_compressed_file();
     generate_decompressed_file();
     
     return 0;
@@ -343,6 +344,65 @@ void generate_decompressed_file(){
     fclose(f);
 
     printf("Output Generated -- output.wav\n\n");
+
+}
+
+void generate_compressed_file(){
+
+
+    printf("Generating compressed audio to compressed_output.wav\n\n");
+
+    FILE *f = fopen("compressed_output.wav", "w");
+    if (f == NULL) {
+        printf("File write failed!\n\n");
+        return;
+    }
+
+    //Write original header information into output.wav in original byte arrangement
+    fwrite(wave.waveHeader.sGroupID, sizeof(wave.waveHeader.sGroupID), 1, f);
+
+    LEFormat_32(wave.waveHeader.dwFileLength);
+    fwrite(data_array, sizeof(data_array), 1, f);
+
+    fwrite(wave.waveHeader.sRiffType, sizeof(wave.waveHeader.sRiffType), 1, f);
+
+    fwrite(wave.waveFormatChunk.sGroupID, sizeof(wave.waveFormatChunk.sGroupID), 1, f);
+
+    LEFormat_32(wave.waveFormatChunk.dwChunkSize);
+    fwrite(data_array, sizeof(data_array), 1, f);
+
+    LEFormat_16(wave.waveFormatChunk.wFormatTag);
+    fwrite(data_array, sizeof(__uint16_t), 1, f);
+
+    LEFormat_16(wave.waveFormatChunk.wChannels);
+    fwrite(data_array, sizeof(__uint16_t), 1, f);
+
+    LEFormat_32(wave.waveFormatChunk.dwSamplesPerSec);
+    fwrite(data_array, sizeof(data_array), 1, f);
+
+    LEFormat_32(wave.waveFormatChunk.dwAvgBytesPerSec);
+    fwrite(data_array, sizeof(data_array), 1, f);
+
+    LEFormat_16(wave.waveFormatChunk.wBlockAlign);
+    fwrite(data_array, sizeof(__uint16_t), 1, f);
+
+    LEFormat_16(wave.waveFormatChunk.dwBitsPerSample);
+    fwrite(data_array, sizeof(__uint16_t), 1, f);
+
+    fwrite(wave.waveDataChunk.sGroupID, sizeof(wave.waveDataChunk.sGroupID), 1, f);
+
+    LEFormat_32(wave.waveDataChunk.dwChunkSize);
+    fwrite(data_array, sizeof(data_array), 1, f);
+
+    //Write converted chunks of data to output.wav in original byte arrangement
+    for (int i = 0; i < numSamples; i++) {
+        LEFormat_16(cwave.cwaveDataChunk.sampleData[i]);
+        fwrite(data_array, sizeOfEachSample, 1, f);
+    }
+
+    fclose(f);
+
+    printf("Output Generated -- compressed_output.wav\n\n");
 
 }
 
