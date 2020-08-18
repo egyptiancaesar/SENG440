@@ -14,6 +14,10 @@ unsigned char data_array[4];
 unsigned long numSamples;
 unsigned int sizeOfEachSample;
 
+time_t start, stop;
+double compression_time;
+double decompression_time;
+
 /*
 * main function:
 */
@@ -30,9 +34,23 @@ int main(int argc, char** argv){
      
     
     read_wave_file();
-    //display_samples();
+    display_samples();
+   //display_wave_headers(); 
+
+
+    start = clock();
     compress_samples();
-    decompress_samples(); 
+    stop = clock();
+    compression_time = (double) (stop - start) / CLOCKS_PER_SEC;
+
+    start = clock();
+    decompress_samples();
+    stop = clock();
+    decompression_time = (double) (stop - start) / CLOCKS_PER_SEC;
+
+    printf("Compression Time:\t\t%fs sec\n", compression_time);
+    printf("Decompression Time:\t%fs sec\n\n", decompression_time);
+
     generate_compressed_file();
     generate_decompressed_file();
     
@@ -125,6 +143,38 @@ void read_wave_file_data_samples(){
     }
 }
 
+
+/*
+void display_wave_headers() {
+    printf("Wave Headers:\n\n");
+
+    fwrite("(01-04): sGroupID\t\t", 1, 19, stdout);
+    fwrite(wave.waveHeader.sGroupID, sizeof(wave.waveHeader.sGroupID), 1, stdout);
+
+    printf("\n(05-08): dwFileLength\t\t%u", wave.waveHeader.dwFileLength);
+
+    fwrite("\n(09-12): sRiffType\t\t", 1, 21, stdout);
+    fwrite(wave.waveHeader.sRiffType, sizeof(wave.waveHeader.sRiffType), 1, stdout);
+
+    fwrite("\n(13-16): sGroupID\t\t", 1, 20, stdout);
+    fwrite(wave.waveFormatChunk.sGroupID, sizeof(wave.waveFormatChunk.sGroupID), 1, stdout);
+    
+    printf("\n(17-20): dwChunkSize\t\t%u", wave.waveFormatChunk.dwChunkSize);
+    printf("\n(21-22): wFormatTag\t\t%u", wave.waveFormatChunk.wFormatTag);
+    printf("\n(23-24): wChannels\t\t%u", wave.waveFormatChunk.wChannels);
+    printf("\n(25-28): dwSamplesPerSec\t%u", wave.waveFormatChunk.dwSamplesPerSec);
+    printf("\n(29-32): dwAvgBytesPerSec\t%u", wave.waveFormatChunk.dwAvgBytesPerSec);
+    printf("\n(33-34): wBlockAlign\t\t%u", wave.waveFormatChunk.wBlockAlign);
+    printf("\n(35-36): dwBitsPerSample\t%u", wave.waveFormatChunk.dwBitsPerSample);
+
+    fwrite("\n(37-40): sGroupID\t\t", 1, 20, stdout);
+    fwrite(wave.waveDataChunk.sGroupID, sizeof(wave.waveDataChunk.sGroupID), 1, stdout);
+
+    printf("\n(41-44): dwChunkSize\t\t%u", wave.waveDataChunk.dwChunkSize);
+
+    printf("\n\n");
+}
+*/
 void read_wave_file(){
     read_wave_file_headers();
     read_wave_file_data_samples();
@@ -234,20 +284,36 @@ void decompress_samples(){
 unsigned short codewordToMagnitude(__uint8_t codeword){
     int chord = (codeword & 0x70) >> 4;
     int step = codeword & 0x0F;
+
     int magnitude;
-
-    int shift;
-
-    for(shift = 12; shift >= 5; shift--){
-        //Use chord value to determine magnitude using decoding table
-        if (chord == shift - 5){
-            //Assemble magnitude from step surrounded by '1' bit
-            magnitude = (1 << (shift - 5)) | (step << (shift - 4)) | (1 << shift);
-        }
     
-    } 
+    if (chord == 0x7) {
+        magnitude = (1 << 7) | (step << 8) | (1 << 12);
+    }
+    else if (chord == 0x6) {
+        magnitude = (1 << 6) | (step << 7) | (1 << 11);
+    }
+    else if (chord == 0x5) {
+        magnitude = (1 << 5) | (step << 6) | (1 << 10);
+    }
+    else if (chord == 0x4) {
+        magnitude = (1 << 4) | (step << 5) | (1 << 9);
+    }
+    else if (chord == 0x3) {
+        magnitude = (1 << 3) | (step << 4) | (1 << 8);
+    }
+    else if (chord == 0x2) {
+        magnitude = (1 << 2) | (step << 3) | (1 << 7);
+    }
+    else if (chord == 0x1) {
+        magnitude = (1 << 1) | (step << 2) | (1 << 6);
+    }
+    else if (chord == 0x0) {
+        magnitude = 1 | (step << 1) | (1 << 5);
+    }
 
     return (unsigned short) magnitude;
+
 }
 
 short sign(short sample){
@@ -275,26 +341,44 @@ __uint8_t codeword(short sign, unsigned short magnitude){
 
     int shift;
 
-    for(shift = 12; shift >= 5; shift--){
-        //compare 1 bit to 12th significant bit of magnitude to determine if first 1 bit occurs there
-        //then 11th down to 5th 
-        //i.e. magnitude & 1000000000000
-        if(magnitude & (1 << shift)) {
-            //if most significant bit of 1 occurs here, assign chor and step according to table
-            chord = shift - 5;
-            //Extract four step bits from magnitude by masking
-            step = (magnitude >> (shift - 4)) & 0xF;
-            break;
-        }        
-    
+    if (magnitude & (1 << 12)) {
+        chord = 0x7;
+        step = (magnitude >> 8) & 0xF;
+    } 
+    else if (magnitude & (1 << 11)) {
+        chord = 0x6;
+        step = (magnitude >> 7) & 0xF;
+    } 
+    else if (magnitude & (1 << 10)) {
+        chord = 0x5;
+        step = (magnitude >> 6) & 0xF;
+    } 
+    else if (magnitude & (1 << 9)) {
+        chord = 0x4;
+        step = (magnitude >> 5) & 0xF;
+    } 
+    else if (magnitude & (1 << 8)) {
+        chord = 0x3;
+        step = (magnitude >> 4) & 0xF;
+    } 
+    else if (magnitude & (1 << 7)) {
+        chord = 0x2;
+        step = (magnitude >> 3) & 0xF;
+    } 
+    else if (magnitude & (1 << 6)) {
+        chord = 0x1;
+        step = (magnitude >> 2) & 0xF;
+    } 
+    else if (magnitude & (1 << 5)) {
+        chord = 0x0;
+        step = (magnitude >> 1) & 0xF;
+    } 
+    else {
+        chord = 0x0;
+        step = magnitude;
     }
-
-    //Assemble sign, chord and step bits into codeword
-    int dec_codeword = (sign << 7) | (chord << 4) | step;
-    codeword = (__uint8_t) dec_codeword; 
-    
-    return codeword;
-
+    codeword = (sign << 7) | (chord << 4) | step;
+    return (__uint8_t) codeword;
 }
 
 void generate_decompressed_file(){

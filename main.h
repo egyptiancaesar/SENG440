@@ -79,8 +79,8 @@ void compress_samples();
 void decompress_samples();
 
 //Helpers
-short sign(short sample);
-unsigned short magnitude(short sample);
+inline short sign(short sample);
+inline unsigned short magnitude(short sample);
 unsigned short codewordToMagnitude(__uint8_t codeword);
 __uint8_t codeword(short sign, unsigned short magnitude);
 void LE_format_32(__uint32_t data);
@@ -88,5 +88,6 @@ void LE_format_16(__uint16_t data);
 
 //Output
 void display_samples();
+void display_wave_headers();
 void generate_compressed_file();
 void generate_decompressed_file();
